@@ -17,7 +17,7 @@ use Illuminate\Http\Response;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class StockLogResource extends Resource
 {
@@ -84,6 +84,12 @@ class StockLogResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function ($query) {
+                $user = Auth::user();
+                if ($user->role !== 'admin') {
+                    $query->where('user_id', $user->id);
+                }
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('product.name')
                     ->searchable()
@@ -138,7 +144,8 @@ class StockLogResource extends Resource
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
-                    ->label('Diproses Oleh'),
+                    ->label('Diproses Oleh')
+                    ->visible(fn () => Auth::user()->role === 'admin'),
                 Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('start_date')
