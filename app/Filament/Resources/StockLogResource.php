@@ -1,0 +1,167 @@
+<?php
+
+// app/Filament/Resources/StockLogResource.php
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\StockLogResource\Pages;
+use App\Models\StockLog;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use App\Exports\StockOutExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Http\Response;
+
+class StockLogResource extends Resource
+{
+    protected static ?string $model = StockLog::class;
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static ?int $navigationSort = 3;
+    protected static ?string $modelLabel = 'Log Stok';
+    protected static ?string $pluralModelLabel = 'Log Stok';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('barcode')
+                    ->label('Pindai Barcode')
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if ($state) {
+                            $product = \App\Models\Product::where('barcode', $state)->first();
+                            if ($product) {
+                                $set('product_id', $product->id);
+                            }
+                        }
+                    }),
+                Forms\Components\Select::make('product_id')
+                    ->relationship('product', 'name')
+                    ->required()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        if ($state) {
+                            $product = \App\Models\Product::find($state);
+                            if ($product) {
+                                $set('quantity', 1);
+                            }
+                        }
+                    }),
+                Forms\Components\Select::make('type')
+                    ->options([
+                        'in' => 'Stok Masuk',
+                        'out' => 'Stok Keluar',
+                    ])
+                    ->required()
+                    ->live(),
+                Forms\Components\TextInput::make('quantity')
+                    ->required()
+                    ->numeric()
+                    ->default(1)
+                    ->live()
+                    ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                        if ($get('type') === 'out' && $state) {
+                            $product = \App\Models\Product::find($get('product_id'));
+                            if ($product) {
+                                $set('total_price', $product->price * $state);
+                            }
+                        }
+                    }),
+                Forms\Components\TextInput::make('total_price')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->visible(fn (Forms\Get $get) => $get('type') === 'out'),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('product.name')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Nama Produk'),
+                Tables\Columns\TextColumn::make('product.barcode')
+                    ->searchable()
+                    ->sortable()
+                    ->label('Barcode'),
+                Tables\Columns\TextColumn::make('type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'in' => 'success',
+                        'out' => 'danger',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'in' => 'Stok Masuk',
+                        'out' => 'Stok Keluar',
+                    })
+                    ->label('Tipe'),
+                Tables\Columns\TextColumn::make('quantity')
+                    ->numeric()
+                    ->sortable()
+                    ->label('Jumlah'),
+                Tables\Columns\TextColumn::make('total_price')
+                    ->money('IDR')
+                    ->sortable()
+                    ->label('Total Harga'),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Diproses Oleh')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->label('Tanggal Dibuat'),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->filters([
+                Tables\Filters\SelectFilter::make('type')
+                    ->options([
+                        'in' => 'Stok Masuk',
+                        'out' => 'Stok Keluar',
+                    ])
+                    ->label('Tipe'),
+                Tables\Filters\SelectFilter::make('product')
+                    ->relationship('product', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Produk'),
+            ])
+            ->actions([
+                //
+            ])
+            ->bulkActions([
+                //
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('export')
+                    ->label('Ekspor Stok Keluar')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function () {
+                        return Excel::download(
+                            new StockOutExport(StockLog::where('type', 'out')->get()),
+                            'stock-out-report.xlsx'
+                        );
+                    }),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListStockLogs::route('/'),
+            'stock-in' => Pages\StockIn::route('/stock-in'),
+            'stock-out' => Pages\StockOut::route('/stock-out'),
+        ];
+    }
+}
