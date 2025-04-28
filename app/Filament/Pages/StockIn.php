@@ -117,7 +117,8 @@ class StockIn extends Page implements Tables\Contracts\HasTable
                     ->select(
                         'products.barcode',
                         'products.name',
-                        'users.name as user_name'
+                        'users.name as user_name',
+                        'users.id as user_id'
                     )
                     ->selectRaw('CONCAT(products.barcode, "-", users.id) as id')
                     ->selectRaw('SUM(stock_logs.quantity) as total_quantity')
@@ -126,7 +127,12 @@ class StockIn extends Page implements Tables\Contracts\HasTable
                     ->when(Auth::user()->role !== 'admin', function ($query) {
                         $query->where('stock_logs.user_id', Auth::id());
                     })
-                    ->groupBy('products.barcode', 'products.name', 'users.name', 'users.id')
+                    ->when(Auth::user()->role === 'admin', function ($query) {
+                        $query->where('users.role', 'karyawan');
+                    })
+                    ->groupBy('stock_logs.user_id', 'products.barcode', 'products.name', 'users.name', 'users.id')
+                    ->orderBy('stock_logs.user_id')
+                    ->orderBy('products.barcode')
             )
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -145,7 +151,19 @@ class StockIn extends Page implements Tables\Contracts\HasTable
                     ->searchable()
                     ->sortable(),
             ])
-            ->defaultSort('total_quantity', 'desc')
+            ->defaultSort('user_name', 'asc')
             ->paginated(false);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && $user->role === 'karyawan';
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+        return $user && $user->role === 'karyawan';
     }
 }
