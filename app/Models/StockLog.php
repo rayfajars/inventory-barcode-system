@@ -10,7 +10,15 @@ class StockLog extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'type', 'quantity', 'price', 'total_price', 'user_id'];
+    protected $fillable = [
+        'product_id',
+        'type',
+        'quantity',
+        'price',
+        'total_price',
+        'user_id',
+        'processed_by'
+    ];
 
     public function product(): BelongsTo
     {

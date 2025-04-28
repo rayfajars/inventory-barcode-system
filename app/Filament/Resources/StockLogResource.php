@@ -118,7 +118,7 @@ class StockLogResource extends Resource
                     ->money('IDR')
                     ->sortable()
                     ->label('Total Harga'),
-                Tables\Columns\TextColumn::make('user.name')
+                Tables\Columns\TextColumn::make('processed_by')
                     ->label('Diproses Oleh')
                     ->searchable()
                     ->sortable(),

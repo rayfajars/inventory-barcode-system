@@ -74,6 +74,7 @@ class StockOut extends Page implements Tables\Contracts\HasTable
             StockLog::create([
                 'product_id' => $product->id,
                 'user_id' => Auth::id(),
+                'processed_by' => Auth::user()->name,
                 'type' => 'out',
                 'quantity' => 1,
                 'price' => $product->price,
