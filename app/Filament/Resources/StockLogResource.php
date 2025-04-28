@@ -11,8 +11,13 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use App\Exports\StockOutExport;
+use App\Exports\StockInExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Response;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class StockLogResource extends Resource
 {
@@ -129,6 +134,30 @@ class StockLogResource extends Resource
                     ->searchable()
                     ->preload()
                     ->label('Produk'),
+                Tables\Filters\SelectFilter::make('user')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Diproses Oleh'),
+                Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Tanggal Mulai'),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Tanggal Selesai'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['start_date'],
+                                fn ($query, $date) => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['end_date'],
+                                fn ($query, $date) => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })
+                    ->label('Tanggal'),
             ])
             ->actions([
                 //
@@ -140,10 +169,39 @@ class StockLogResource extends Resource
                 Tables\Actions\Action::make('export')
                     ->label('Ekspor Stok Keluar')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->action(function () {
+                    ->action(function (Tables\Actions\Action $action) {
+                        $table = $action->getTable();
+
+                        // Get the base query with all filters applied
+                        $query = $table->getQuery();
+
+                        // Force the type to be 'out' for stock out export
+                        $query->where('type', 'out');
+
+                        $records = $query->get();
+
                         return Excel::download(
-                            new StockOutExport(StockLog::where('type', 'out')->get()),
+                            new StockOutExport($records),
                             'stock-out-report.xlsx'
+                        );
+                    }),
+                Tables\Actions\Action::make('exportIn')
+                    ->label('Ekspor Stok Masuk')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function (Tables\Actions\Action $action) {
+                        $table = $action->getTable();
+
+                        // Get the base query with all filters applied
+                        $query = $table->getQuery();
+
+                        // Force the type to be 'in' for stock in export
+                        $query->where('type', 'in');
+
+                        $records = $query->get();
+
+                        return Excel::download(
+                            new StockInExport($records),
+                            'stock-in-report.xlsx'
                         );
                     }),
             ]);

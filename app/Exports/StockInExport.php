@@ -1,6 +1,5 @@
 <?php
 
-// app/Exports/StockOutExport.php
 namespace App\Exports;
 
 use App\Models\StockLog;
@@ -8,7 +7,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class StockOutExport implements FromCollection, WithHeadings, WithMapping
+class StockInExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $records;
 
@@ -28,8 +27,6 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping
             'Product Name',
             'Barcode',
             'Quantity',
-            'Price',
-            'Total Price',
             'Processed By',
             'Date',
         ];
@@ -41,8 +38,6 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping
             $row->product->name,
             $row->product->barcode,
             $row->quantity,
-            'Rp ' . number_format($row->product->price, 0, ',', '.'),
-            'Rp ' . number_format($row->total_price, 0, ',', '.'),
             $row->user->name,
             $row->created_at->format('d/m/Y H:i:s'),
         ];
