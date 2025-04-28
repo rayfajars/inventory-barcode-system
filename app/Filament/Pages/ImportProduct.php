@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
-
+use Illuminate\Support\Facades\Auth;
 class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
 {
     use InteractsWithForms;
@@ -176,5 +176,17 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                     ->label('Stok')
                     ->numeric(),
             ]);
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = Auth::user();
+        return $user && $user->role === 'admin';
+    }
+
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+        return $user && $user->role === 'admin';
     }
 }
