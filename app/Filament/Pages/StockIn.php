@@ -51,7 +51,6 @@ class StockIn extends Page implements Tables\Contracts\HasTable
 
             if (!$product) {
                 Notification::make()
-                    // ->title('Error')
                     ->title('Produk tidak ditemukan')
                     ->danger()
                     ->send();
@@ -124,6 +123,9 @@ class StockIn extends Page implements Tables\Contracts\HasTable
                     ->selectRaw('SUM(stock_logs.quantity) as total_quantity')
                     ->where('stock_logs.type', 'in')
                     ->whereDate('stock_logs.created_at', today())
+                    ->when(Auth::user()->role !== 'admin', function ($query) {
+                        $query->where('stock_logs.user_id', Auth::id());
+                    })
                     ->groupBy('products.barcode', 'products.name', 'users.name', 'users.id')
             )
             ->columns([

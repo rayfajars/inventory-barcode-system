@@ -51,7 +51,6 @@ class StockOut extends Page implements Tables\Contracts\HasTable
 
             if (!$product) {
                 Notification::make()
-                    // ->title('Error')
                     ->title('Produk tidak ditemukan')
                     ->danger()
                     ->send();
@@ -61,7 +60,6 @@ class StockOut extends Page implements Tables\Contracts\HasTable
 
             if ($product->stock <= 0) {
                 Notification::make()
-                    // ->title('Error')
                     ->title('Stok tidak mencukupi')
                     ->danger()
                     ->send();
@@ -137,6 +135,9 @@ class StockOut extends Page implements Tables\Contracts\HasTable
                     ->selectRaw('SUM(stock_logs.quantity * stock_logs.price) as total_price')
                     ->where('stock_logs.type', 'out')
                     ->whereDate('stock_logs.created_at', today())
+                    ->when(Auth::user()->role !== 'admin', function ($query) {
+                        $query->where('stock_logs.user_id', Auth::id());
+                    })
                     ->groupBy('products.barcode', 'products.name', 'users.name', 'users.id')
             )
             ->columns([
