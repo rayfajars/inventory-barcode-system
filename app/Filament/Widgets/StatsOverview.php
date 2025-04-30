@@ -11,12 +11,29 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms;
 
 class StatsOverview extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.stats-overview-widget-with-filters';
+
+    protected int | string | array $columnSpan = 'full';
+
+    // Add properties for filters
+    public $startDate;
+    public $endDate;
+    public $selectedProduct = '';  // Empty string for "All Products"
+
+    public function mount()
+    {
+        $this->startDate = now()->startOfMonth()->format('Y-m-d');
+        $this->endDate = now()->format('Y-m-d');
+    }
+
     protected function getStats(): array
     {
-        $today = Carbon::today();
         $user = Auth::user();
         $isAdmin = $user->role === 'admin';
 
@@ -24,50 +41,96 @@ class StatsOverview extends BaseWidget
 
         // Only show total stock for admin
         if ($isAdmin) {
-            $totalStock = Product::sum('stock');
+            $totalStock = Product::when($this->selectedProduct, function ($query) {
+                    $query->where('id', $this->selectedProduct);
+                })->sum('stock');
+
             $stats[] = Stat::make('Total Stock', $totalStock)
                 ->description('Total current stock')
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('primary');
         }
 
-        // Base query for today's stock logs
-        $stockLogQuery = StockLog::whereDate('created_at', $today);
+        // Base query for stock logs within date range
+        $stockLogQuery = StockLog::query();
+
+        if ($this->startDate) {
+            $stockLogQuery->whereDate('created_at', '>=', Carbon::parse($this->startDate));
+        }
+
+        if ($this->endDate) {
+            $stockLogQuery->whereDate('created_at', '<=', Carbon::parse($this->endDate));
+        }
+
+        if ($this->selectedProduct) {
+            $stockLogQuery->where('product_id', $this->selectedProduct);
+        }
 
         // If not admin, only show user's processed records
         if (!$isAdmin) {
             $stockLogQuery->where('user_id', $user->id);
         }
 
-        $todayStockIn = (clone $stockLogQuery)
+        // Calculate previous period for comparison
+        $currentPeriodDays = Carbon::parse($this->startDate)->diffInDays(Carbon::parse($this->endDate)) + 1;
+        $previousPeriodStart = Carbon::parse($this->startDate)->subDays($currentPeriodDays);
+        $previousPeriodEnd = Carbon::parse($this->startDate)->subDay();
+
+        // Get previous period data
+        $previousQuery = (clone $stockLogQuery)
+            ->whereDate('created_at', '>=', $previousPeriodStart)
+            ->whereDate('created_at', '<=', $previousPeriodEnd);
+
+        // Current period calculations
+        $totalStockIn = (clone $stockLogQuery)
             ->where('type', 'in')
             ->sum('quantity');
 
-        $todayStockOut = (clone $stockLogQuery)
+        $totalStockOut = (clone $stockLogQuery)
             ->where('type', 'out')
             ->sum('quantity');
 
-        $todaySales = (clone $stockLogQuery)
+        $totalSales = (clone $stockLogQuery)
             ->where('type', 'out')
             ->sum(DB::raw('quantity * price'));
 
-        $todayProductsSold = (clone $stockLogQuery)
+        // Previous period calculations
+        $previousSales = (clone $previousQuery)
             ->where('type', 'out')
-            ->count();
+            ->sum(DB::raw('quantity * price'));
+
+        // Calculate percentage changes
+        $salesChange = $previousSales != 0
+            ? round((($totalSales - $previousSales) / $previousSales) * 100)
+            : 0;
+
+        // Format the sales change indicator
+        $salesChangeColor = $salesChange >= 0 ? 'success' : 'danger';
+        $salesChangeIcon = $salesChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down';
+        $salesChangeText = abs($salesChange) . 'k ' . ($salesChange >= 0 ? 'increase' : 'decrease');
 
         $stats = array_merge($stats, [
-            Stat::make('Today Stock In', $todayStockIn)
-                ->description('Products added today')
-                ->descriptionIcon('heroicon-m-arrow-down-tray')
-                ->color('success'),
-            Stat::make('Today Stock Out', $todayStockOut)
-                ->description('Products sold today')
-                ->descriptionIcon('heroicon-m-arrow-up-tray')
-                ->color('danger'),
-            Stat::make('Today Sales', 'Rp ' . number_format($todaySales, 0, ',', '.'))
-                ->description("{$todayProductsSold} products sold")
-                ->descriptionIcon('heroicon-m-banknotes')
-                ->color('warning'),
+            Stat::make('Revenue', 'Rp ' . number_format($totalSales, 0, ',', '.'))
+                ->description($salesChangeText)
+                ->descriptionIcon($salesChangeIcon)
+                ->color($salesChangeColor)
+                ->extraAttributes([
+                    'class' => 'ring-1 ring-gray-800',
+                ]),
+            Stat::make('New customers', $totalStockIn)
+                ->description('3% decrease')
+                ->descriptionIcon('heroicon-m-arrow-trending-down')
+                ->color('danger')
+                ->extraAttributes([
+                    'class' => 'ring-1 ring-gray-800',
+                ]),
+            Stat::make('New orders', $totalStockOut)
+                ->description('7% increase')
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
+                ->color('success')
+                ->extraAttributes([
+                    'class' => 'ring-1 ring-gray-800',
+                ]),
         ]);
 
         return $stats;
