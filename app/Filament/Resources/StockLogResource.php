@@ -91,6 +91,10 @@ class StockLogResource extends Resource
                 }
             })
             ->columns([
+                Tables\Columns\TextColumn::make('created_at')
+              ->dateTime('d/m/Y H:i')
+                ->sortable()
+                ->label('Tanggal'),
                 Tables\Columns\TextColumn::make('product.name')
                     ->searchable()
                     ->sortable()
@@ -114,18 +118,15 @@ class StockLogResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->label('Jumlah'),
-                Tables\Columns\TextColumn::make('total_price')
+                Tables\Columns\TextColumn::make('price')
                     ->money('IDR')
                     ->sortable()
-                    ->label('Total Harga'),
+                    ->label('Harga'),
                 Tables\Columns\TextColumn::make('processed_by')
                     ->label('Diproses Oleh')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->label('Tanggal Dibuat'),
+
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

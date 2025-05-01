@@ -63,5 +63,13 @@
                 </div>
             @endforeach
         </div>
+
+        <div class="mt-4">
+            {{-- <div class="p-4 rounded-xl w-full bg-white dark:bg-gray-900 border-gray-500 border"> --}}
+                <div wire:key="stock-logs-table-{{ $selectedProduct }}-{{ $selectedUser }}-{{ $startDate }}-{{ $endDate }}">
+                    {{ $this->table }}
+                </div>
+            {{-- </div> --}}
+        </div>
     </div>
 </x-filament-widgets::widget>
