@@ -45,8 +45,8 @@ class StatsOverview extends BaseWidget
                     $query->where('id', $this->selectedProduct);
                 })->sum('stock');
 
-            $stats[] = Stat::make('Total Stock', $totalStock)
-                ->description('Total current stock')
+            $stats[] = Stat::make('Total Product', $totalStock)
+                ->description('Sisa produk yang tersedia')
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('primary');
         }
@@ -105,29 +105,33 @@ class StatsOverview extends BaseWidget
             : 0;
 
         // Format the sales change indicator
-        $salesChangeColor = $salesChange >= 0 ? 'success' : 'danger';
-        $salesChangeIcon = $salesChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down';
-        $salesChangeText = abs($salesChange) . 'k ' . ($salesChange >= 0 ? 'increase' : 'decrease');
+        // $salesChangeColor = $salesChange >= 0 ? 'success' : 'danger';
+        // $salesChangeIcon = $salesChange >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down';
+        // $salesChangeText = abs($salesChange) . 'k ' . ($salesChange >= 0 ? 'increase' : 'decrease');
 
         $stats = array_merge($stats, [
-            Stat::make('Revenue', 'Rp ' . number_format($totalSales, 0, ',', '.'))
-                ->description($salesChangeText)
-                ->descriptionIcon($salesChangeIcon)
-                ->color($salesChangeColor)
+
+            Stat::make('Stok masuk', $totalStockIn)
+                ->description('Total stok masuk')
+                ->descriptionIcon('heroicon-m-arrow-trending-down')
+                ->color('success')
                 ->extraAttributes([
                     'class' => 'ring-1 ring-gray-800',
                 ]),
-            Stat::make('New customers', $totalStockIn)
-                ->description('3% decrease')
-                ->descriptionIcon('heroicon-m-arrow-trending-down')
+            Stat::make('Stok keluar', $totalStockOut)
+                ->description('Total stok keluar')
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('danger')
                 ->extraAttributes([
                     'class' => 'ring-1 ring-gray-800',
                 ]),
-            Stat::make('New orders', $totalStockOut)
-                ->description('7% increase')
+                Stat::make('Total Penjualan', 'Rp ' . number_format($totalSales, 0, ',', '.'))
+                // ->description($salesChangeText)
+                // ->descriptionIcon($salesChangeIcon)
+                // ->color($salesChangeColor)
+                ->description('Total penjualan')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
-                ->color('success')
+                ->color('info')
                 ->extraAttributes([
                     'class' => 'ring-1 ring-gray-800',
                 ]),
