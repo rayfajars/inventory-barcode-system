@@ -17,6 +17,23 @@
                     </x-filament::input.wrapper>
                 </div>
 
+                @if(auth()->user()->role === 'admin')
+                <div class="w-full">
+                    <label class="block text-sm font-medium mb-2 text-black dark:text-white">Diproses Oleh</label>
+                    <x-filament::input.wrapper>
+                        <x-filament::input.select
+                            wire:model.live="selectedUser"
+                            class="w-full bg-gray-800 border-gray-700 text-black dark:text-white"
+                        >
+                            <option value="">Semua Users</option>
+                            @foreach(\App\Models\User::pluck('name', 'id') as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
+                </div>
+                @endif
+
                 <div class="w-full">
                     <label class="block text-sm font-medium text-black dark:text-white mb-2">Tanggal Mulai</label>
                     <x-filament::input.wrapper>

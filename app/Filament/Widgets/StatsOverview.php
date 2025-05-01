@@ -25,6 +25,7 @@ class StatsOverview extends BaseWidget
     public $startDate;
     public $endDate;
     public $selectedProduct = '';  // Empty string for "All Products"
+    public $selectedUser = '';     // Add this line for user filter
 
     public function mount()
     {
@@ -67,7 +68,10 @@ class StatsOverview extends BaseWidget
         }
 
         // If not admin, only show user's processed records
-        if (!$isAdmin) {
+        if ($isAdmin && $this->selectedUser) {
+            $stockLogQuery->where('user_id', $this->selectedUser);
+        } elseif (!$isAdmin) {
+            // If not admin, only show user's processed records
             $stockLogQuery->where('user_id', $user->id);
         }
 
