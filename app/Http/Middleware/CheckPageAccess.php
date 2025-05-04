@@ -30,7 +30,9 @@ class CheckPageAccess
         $allowedPages = [
             'log-stock',
             'stock-masuk',
-            'stock-keluar'
+            'stock-keluar',
+            'products.index',
+            'products.view'
         ];
 
         $currentPage = $request->route()->getName();

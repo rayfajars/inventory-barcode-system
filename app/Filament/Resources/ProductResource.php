@@ -89,35 +89,6 @@ class ProductResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->modalWidth('sm')
-                    ->label('Ubah')
-                    ->beforeFormFilled(function (Product $record) {
-                        static::$oldData = $record->toArray();
-                    })
-                    ->after(function (Product $record) {
-                        $newData = $record->toArray();
-                        $changes = [];
-
-                        if (static::$oldData['name'] !== $newData['name']) {
-                            $changes[] = "Nama: " . static::$oldData['name'] . " → " . $newData['name'];
-                        }
-                        if (static::$oldData['barcode'] !== $newData['barcode']) {
-                            $changes[] = "Barcode: " . static::$oldData['barcode'] . " → " . $newData['barcode'];
-                        }
-                        if (static::$oldData['price'] != $newData['price']) {
-                            $changes[] = "Harga: Rp" . number_format(static::$oldData['price'], 0, ',', '.') . " → Rp" . number_format($newData['price'], 0, ',', '.');
-                        }
-
-                        if (!empty($changes)) {
-                            HistoryLogService::log(
-                                'update',
-                                'product',
-                                "Produk diubah: {$record->name} (" . implode(', ', $changes) . ")"
-                            );
-                        }
-                    }),
-
                 Tables\Actions\Action::make('stockIn')
                     ->label('Stok Masuk')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -203,8 +174,13 @@ class ProductResource extends Resource
                         HistoryLogService::logStockChange('stock_out', $record->name, $quantity);
                     }),
 
+                Tables\Actions\EditAction::make()
+                    ->label('Edit')
+                    ->visible(fn () => Auth::user()->role === 'admin'),
+
                 Tables\Actions\DeleteAction::make()
                     ->label('Hapus')
+                    ->visible(fn () => Auth::user()->role === 'admin')
                     ->after(function (Product $record) {
                         HistoryLogService::logProductChange('delete', $record->name);
                     }),
@@ -213,6 +189,7 @@ class ProductResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Hapus Terpilih')
+                        ->visible(fn () => Auth::user()->role === 'admin')
                         ->after(function (Collection $records) {
                             foreach ($records as $record) {
                                 HistoryLogService::logProductChange('delete', $record->name);
@@ -240,14 +217,12 @@ class ProductResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        $user = Auth::user();
-        return $user && $user->role === 'admin';
+        return true; // Allow both admin and karyawan to access
     }
 
     public static function canAccess(): bool
     {
-        $user = Auth::user();
-        return $user && $user->role === 'admin';
+        return true; // Allow both admin and karyawan to access
     }
 
     public static function logProductChange($oldData, $newData, $action)
