@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('action'); // The type of action (create, update, delete, etc.)
             $table->string('module'); // The module/feature being affected (product, user, stock, etc.)
             $table->text('description'); // Detailed description of the action
-            $table->foreignId('user_id')->constrained('users'); // Who performed the action
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete(); // Who performed the action
             $table->timestamps();
         });
     }
