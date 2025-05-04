@@ -15,6 +15,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use App\Services\HistoryLogService;
+
 class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
 {
     use InteractsWithForms;
@@ -127,6 +129,8 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                             ]);
                         }
                     }
+
+                    HistoryLogService::logProductChange('create', $name);
 
                     $results->push([
                         'barcode' => $barcode,

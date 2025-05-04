@@ -14,6 +14,7 @@ use Illuminate\Support\HtmlString;
 use Filament\Notifications\Notification;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Illuminate\Support\Facades\Auth;
+use App\Services\HistoryLogService;
 
 class StockIn extends Page implements Tables\Contracts\HasTable
 {
@@ -58,10 +59,10 @@ class StockIn extends Page implements Tables\Contracts\HasTable
                 return;
             }
 
-            // Tambah stok
+            // Update product stock
             $product->increment('stock');
 
-            // Buat log stok
+            // Create stock log
             StockLog::create([
                 'product_id' => $product->id,
                 'user_id' => Auth::id(),
@@ -69,6 +70,8 @@ class StockIn extends Page implements Tables\Contracts\HasTable
                 'type' => 'in',
                 'quantity' => 1,
             ]);
+
+            HistoryLogService::logStockChange('stock_in', $product->name, 1);
 
             Notification::make()
                 ->title('Berhasil')

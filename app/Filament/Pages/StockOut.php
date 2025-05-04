@@ -14,6 +14,7 @@ use Illuminate\Support\HtmlString;
 use Filament\Notifications\Notification;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Illuminate\Support\Facades\Auth;
+use App\Services\HistoryLogService;
 
 class StockOut extends Page implements Tables\Contracts\HasTable
 {
@@ -80,6 +81,8 @@ class StockOut extends Page implements Tables\Contracts\HasTable
                 'price' => $product->price,
                 'total_price' => $product->price,
             ]);
+
+            HistoryLogService::logStockChange('stock_out', $product->name, 1);
 
             Notification::make()
                 ->title('Berhasil')
