@@ -181,6 +181,7 @@ class ProductResource extends Resource
                 Tables\Actions\DeleteAction::make()
                     ->label('Hapus')
                     ->visible(fn () => Auth::user()->role === 'admin')
+                    ->modalDescription('Produk yg dihapus tidak akan bisa dikembalikan kembali dan akan menghapus seluruh history dari stok masuk dan stok keluar')
                     ->after(function (Product $record) {
                         HistoryLogService::logProductChange('delete', $record->name);
                     }),
