@@ -108,12 +108,25 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                 }
 
                 try {
-                    Product::create([
+                    $product = Product::create([
                         'barcode' => $barcode,
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
                     ]);
+
+                    // Create individual stock logs for each unit
+                    if ($stock > 0) {
+                        for ($i = 0; $i < $stock; $i++) {
+                            \App\Models\StockLog::create([
+                                'product_id' => $product->id,
+                                'type' => 'in',
+                                'quantity' => 1,
+                                'user_id' => Auth::id(),
+                                'processed_by' => Auth::user()->name,
+                            ]);
+                        }
+                    }
 
                     $results->push([
                         'barcode' => $barcode,
