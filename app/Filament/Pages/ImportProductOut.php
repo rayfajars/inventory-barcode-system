@@ -17,19 +17,18 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use App\Services\HistoryLogService;
 
-class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
+class ImportProductOut extends Page implements HasForms, Tables\Contracts\HasTable
 {
     use InteractsWithForms;
     use Tables\Concerns\InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-down-tray';
-    protected static ?string $navigationLabel = 'Import Produk Masuk';
-    protected static ?int $navigationSort = 1;
-    protected static string $view = 'filament.pages.import-product';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
+    protected static ?string $navigationLabel = 'Import Produk Keluar';
+    protected static ?int $navigationSort = 2;
+    protected static string $view = 'filament.pages.import-product-out';
 
     public ?array $data = [];
     public Collection $importResults;
-
 
     public function mount(): void
     {
@@ -95,34 +94,44 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                     continue;
                 }
 
-                // Check if barcode exists
-                $existingProduct = Product::where('barcode', $barcode)->first();
-                if ($existingProduct) {
+                // Cari produk berdasarkan barcode
+                $product = Product::where('barcode', $barcode)->first();
+                if (!$product) {
                     $results->push([
                         'barcode' => $barcode,
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
                         'status' => 'Gagal',
-                        'message' => 'Barcode sudah ada'
+                        'message' => 'Produk tidak ditemukan'
+                    ]);
+                    continue;
+                }
+
+                // Cek stok cukup
+                if ($product->stock < $stock) {
+                    $results->push([
+                        'barcode' => $barcode,
+                        'name' => $product->name,
+                        'price' => $product->price,
+                        'stock' => $stock,
+                        'status' => 'Gagal',
+                        'message' => 'Stok tidak mencukupi'
                     ]);
                     continue;
                 }
 
                 try {
-                    $product = Product::create([
-                        'barcode' => $barcode,
-                        'name' => $name,
-                        'price' => $price,
-                        'stock' => $stock,
-                    ]);
+                    // Kurangi stok
+                    $product->stock -= $stock;
+                    $product->save();
 
-                    // Create individual stock logs for each unit
+                    // Buat log stok keluar per unit
                     if ($stock > 0) {
                         for ($i = 0; $i < $stock; $i++) {
                             \App\Models\StockLog::create([
                                 'product_id' => $product->id,
-                                'type' => 'in',
+                                'type' => 'out',
                                 'quantity' => 1,
                                 'user_id' => Auth::id(),
                                 'processed_by' => Auth::user()->name,
@@ -130,21 +139,21 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                         }
                     }
 
-                    \App\Services\HistoryLogService::logImport('product', "Import produk masuk: {$name} (jumlah: {$stock} unit)");
+                    HistoryLogService::logImport('product', "Import produk keluar: {$product->name} (jumlah: {$stock} unit)");
 
                     $results->push([
                         'barcode' => $barcode,
-                        'name' => $name,
-                        'price' => $price,
+                        'name' => $product->name,
+                        'price' => $product->price,
                         'stock' => $stock,
                         'status' => 'Berhasil',
-                        'message' => 'Produk berhasil diimport'
+                        'message' => 'Stok berhasil dikurangi'
                     ]);
                 } catch (\Exception $e) {
                     $results->push([
                         'barcode' => $barcode,
-                        'name' => $name,
-                        'price' => $price,
+                        'name' => $product->name,
+                        'price' => $product->price,
                         'stock' => $stock,
                         'status' => 'Gagal',
                         'message' => $e->getMessage()
