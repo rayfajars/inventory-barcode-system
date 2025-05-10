@@ -175,7 +175,7 @@ class ProductResource extends Resource
                             ->send();
 
                         HistoryLogService::logStockChange('stock_out', $record->name, $quantity);
-                    }),
+                    })  ->visible(fn () => Auth::user()->role === 'admin'),
 
                 Tables\Actions\EditAction::make()
                     ->label('Edit')
