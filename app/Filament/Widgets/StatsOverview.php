@@ -95,6 +95,7 @@ class StatsOverview extends TableWidget
                 TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime('d/m/Y H:i')
+                    ->timezone('Asia/Jakarta')
                     ->sortable(),
                 TextColumn::make('product.name')
                     ->label('Produk')

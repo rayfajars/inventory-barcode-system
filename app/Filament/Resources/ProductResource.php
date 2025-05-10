@@ -116,6 +116,8 @@ class ProductResource extends Resource
                                 'product_id' => $record->id,
                                 'type' => 'in',
                                 'quantity' => 1,
+                                'price' => $record->price,
+                                'total_price' => $record->price,
                                 'user_id' => Auth::id(),
                                 'processed_by' => Auth::user()->name,
                             ]);
