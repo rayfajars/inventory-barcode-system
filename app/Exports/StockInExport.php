@@ -24,22 +24,22 @@ class StockInExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'Product Name',
             'Barcode',
-            'Quantity',
-            'Processed By',
-            'Date',
+            'Nama Produk',
+            'Harga',
+            'Stok',
+            'Batas Stok',
         ];
     }
 
     public function map($row): array
     {
         return [
-            $row->product->name,
             $row->product->barcode,
+            $row->product->name,
+            $row->product->price,
             $row->quantity,
-            $row->user->name,
-            $row->created_at->format('d/m/Y H:i:s'),
+            $row->product->stock_limit,
         ];
     }
 }

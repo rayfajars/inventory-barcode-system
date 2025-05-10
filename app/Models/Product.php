@@ -16,7 +16,8 @@ class Product extends Model
         'barcode',
         'name',
         'price',
-        'stock'
+        'stock',
+        'stock_limit'
     ];
 
     public function stockLogs(): HasMany

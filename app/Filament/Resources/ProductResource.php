@@ -51,6 +51,12 @@ class ProductResource extends Resource
                     ->disabled()
                     ->minValue(0)
                     ->label('Stok'),
+                Forms\Components\TextInput::make('stock_limit')
+                    ->required()
+                    ->numeric()
+                    ->default(10)
+                    ->minValue(0)
+                    ->label('Batas Stok'),
             ]);
     }
 
@@ -75,6 +81,19 @@ class ProductResource extends Resource
                     ->numeric()
                     ->sortable()
                     ->label('Stok'),
+                Tables\Columns\TextColumn::make('stock_limit')
+                    ->numeric()
+                    ->sortable()
+                    ->label('Batas Stok')
+                    ->badge()
+                    ->color(fn (Product $record): string =>
+                        $record->stock <= $record->stock_limit
+                            ? 'danger'
+                            : 'success'
+                    )
+                    ->formatStateUsing(fn (Product $record): string =>
+                        "{$record->stock_limit}"
+                    ),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d M Y H:i')
                     ->timezone('Asia/Jakarta')

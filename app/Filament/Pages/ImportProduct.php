@@ -82,6 +82,7 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                 $name = $row[1] ?? null;
                 $price = $row[2] ?? null;
                 $stock = $row[3] ?? null;
+                $stockLimit = $row[4] ?? 10; // Default to 10 if not provided
 
                 if (!$barcode || !$name || !$price || !$stock) {
                     $results->push([
@@ -89,6 +90,7 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
+                        'stock_limit' => $stockLimit,
                         'status' => 'Gagal',
                         'message' => 'Data tidak lengkap'
                     ]);
@@ -105,13 +107,15 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                             $existingProduct->update([
                                 'stock' => $stock, // Set to new stock value
                                 'name' => $name,
-                                'price' => $price
+                                'price' => $price,
+                                'stock_limit' => $stockLimit
                             ]);
                         } else {
                             // If product exists and not deleted, update name, price and increment stock
                             $existingProduct->update([
                                 'name' => $name,
-                                'price' => $price
+                                'price' => $price,
+                                'stock_limit' => $stockLimit
                             ]);
                             $existingProduct->increment('stock', $stock);
                         }
@@ -140,6 +144,7 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                             'name' => $name,
                             'price' => $price,
                             'stock' => $stock,
+                            'stock_limit' => $stockLimit,
                             'status' => 'Berhasil',
                             'message' => $message
                         ]);
@@ -150,6 +155,7 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                             'name' => $name,
                             'price' => $price,
                             'stock' => $stock,
+                            'stock_limit' => $stockLimit,
                             'status' => 'Gagal',
                             'message' => $e->getMessage()
                         ]);
@@ -187,6 +193,7 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
+                        'stock_limit' => $stockLimit,
                         'status' => 'Berhasil',
                         'message' => 'Produk berhasil diimport'
                     ]);
@@ -196,6 +203,7 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
+                        'stock_limit' => $stockLimit,
                         'status' => 'Gagal',
                         'message' => $e->getMessage()
                     ]);
