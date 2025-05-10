@@ -87,11 +87,13 @@ class UserResource extends Resource
                     ->label('Role'),
                 TextColumn::make('created_at')
                     ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
                     ->sortable()
                     ->label('Tanggal Dibuat')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
                     ->sortable()
                     ->label('Tanggal Diperbarui')
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -23,7 +23,7 @@ class StockLogResource extends Resource
 {
     protected static ?string $model = StockLog::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
     protected static ?string $modelLabel = 'Log Stok';
     protected static ?string $pluralModelLabel = 'Log Stok';
 
@@ -92,9 +92,10 @@ class StockLogResource extends Resource
             })
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
-              ->dateTime('d/m/Y H:i')
-                ->sortable()
-                ->label('Tanggal'),
+                    ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
+                    ->sortable()
+                    ->label('Tanggal'),
                 Tables\Columns\TextColumn::make('product.name')
                     ->searchable()
                     ->sortable()

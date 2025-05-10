@@ -25,7 +25,7 @@ class StockOut extends Page implements Tables\Contracts\HasTable
 
     protected static ?string $navigationLabel = 'Stok Keluar';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 4;
 
     protected static string $view = 'filament.pages.stock-out';
 
@@ -177,12 +177,12 @@ class StockOut extends Page implements Tables\Contracts\HasTable
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
-        return $user && $user->role === 'karyawan';
+        return $user && $user->role === 'admin';
     }
 
     public static function canAccess(): bool
     {
         $user = Auth::user();
-        return $user && $user->role === 'karyawan';
+        return $user && $user->role === 'admin';
     }
 }

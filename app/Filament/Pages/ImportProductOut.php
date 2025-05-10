@@ -133,6 +133,8 @@ class ImportProductOut extends Page implements HasForms, Tables\Contracts\HasTab
                                 'product_id' => $product->id,
                                 'type' => 'out',
                                 'quantity' => 1,
+                                'price' => $product->price,
+                                'total_price' => $product->price,
                                 'user_id' => Auth::id(),
                                 'processed_by' => Auth::user()->name,
                             ]);

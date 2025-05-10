@@ -57,6 +57,7 @@ class ProductResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->recordUrl(null)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
@@ -75,12 +76,14 @@ class ProductResource extends Resource
                     ->sortable()
                     ->label('Stok'),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('Dibuat pada'),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->label('Diperbarui pada'),
@@ -181,7 +184,7 @@ class ProductResource extends Resource
                 Tables\Actions\DeleteAction::make()
                     ->label('Hapus')
                     ->visible(fn () => Auth::user()->role === 'admin')
-                    ->modalDescription('Produk yg dihapus tidak akan bisa dikembalikan kembali dan akan menghapus seluruh history dari stok masuk dan stok keluar')
+                    ->modalDescription('Produk yg dihapus tidak akan bisa dikembalikan kembali')
                     ->after(function (Product $record) {
                         HistoryLogService::logProductChange('delete', $record->name);
                     }),

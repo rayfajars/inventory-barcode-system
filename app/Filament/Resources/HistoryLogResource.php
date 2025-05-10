@@ -58,6 +58,7 @@ class HistoryLogResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Waktu')
                     ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Pengguna')

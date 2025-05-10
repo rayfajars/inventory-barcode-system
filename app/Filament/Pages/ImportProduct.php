@@ -95,18 +95,66 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                     continue;
                 }
 
-                // Check if barcode exists
-                $existingProduct = Product::where('barcode', $barcode)->first();
+                // Check if barcode exists (including soft deleted)
+                $existingProduct = Product::withTrashed()->where('barcode', $barcode)->first();
                 if ($existingProduct) {
-                    $results->push([
-                        'barcode' => $barcode,
-                        'name' => $name,
-                        'price' => $price,
-                        'stock' => $stock,
-                        'status' => 'Gagal',
-                        'message' => 'Barcode sudah ada'
-                    ]);
-                    continue;
+                    try {
+                        if ($existingProduct->trashed()) {
+                            // If product was soft deleted, restore it and update stock
+                            $existingProduct->restore();
+                            $existingProduct->update([
+                                'stock' => $stock, // Set to new stock value
+                                'name' => $name,
+                                'price' => $price
+                            ]);
+                        } else {
+                            // If product exists and not deleted, update name, price and increment stock
+                            $existingProduct->update([
+                                'name' => $name,
+                                'price' => $price
+                            ]);
+                            $existingProduct->increment('stock', $stock);
+                        }
+
+                        // Create individual stock logs for each unit
+                        for ($i = 0; $i < $stock; $i++) {
+                            \App\Models\StockLog::create([
+                                'product_id' => $existingProduct->id,
+                                'type' => 'in',
+                                'quantity' => 1,
+                                'price' => $price,
+                                'total_price' => $price,
+                                'user_id' => Auth::id(),
+                                'processed_by' => Auth::user()->name,
+                            ]);
+                        }
+
+                        $message = $existingProduct->trashed()
+                            ? "Produk berhasil di-restore dan stok diupdate"
+                            : "Produk berhasil diupdate dan stok ditambahkan";
+
+                        \App\Services\HistoryLogService::logImport('product', "Update produk: {$name} (jumlah: {$stock} unit)");
+
+                        $results->push([
+                            'barcode' => $barcode,
+                            'name' => $name,
+                            'price' => $price,
+                            'stock' => $stock,
+                            'status' => 'Berhasil',
+                            'message' => $message
+                        ]);
+                        continue;
+                    } catch (\Exception $e) {
+                        $results->push([
+                            'barcode' => $barcode,
+                            'name' => $name,
+                            'price' => $price,
+                            'stock' => $stock,
+                            'status' => 'Gagal',
+                            'message' => $e->getMessage()
+                        ]);
+                        continue;
+                    }
                 }
 
                 try {
@@ -124,6 +172,8 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                                 'product_id' => $product->id,
                                 'type' => 'in',
                                 'quantity' => 1,
+                                'price' => $price,
+                                'total_price' => $price,
                                 'user_id' => Auth::id(),
                                 'processed_by' => Auth::user()->name,
                             ]);
