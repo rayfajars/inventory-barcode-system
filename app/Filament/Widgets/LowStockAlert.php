@@ -12,6 +12,13 @@ class LowStockAlert extends BaseWidget
     protected static ?string $heading = 'Peringatan Stok Rendah';
     protected int|string|array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        return Product::query()
+            ->whereRaw('stock <= stock_limit')
+            ->exists();
+    }
+
     public function table(Table $table): Table
     {
         return $table
