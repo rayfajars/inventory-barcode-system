@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
 use App\Services\HistoryLogService;
 use Illuminate\Database\Eloquent\Collection;
+use App\Exports\ProductsExport;
+use App\Exports\ProductTemplateExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductResource extends Resource
 {
@@ -234,6 +237,27 @@ class ProductResource extends Resource
                             }
                         }),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('export')
+                    ->label('Export Produk')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->action(function ($livewire) {
+                        // Get the filtered query from the table
+                        $query = $livewire->getFilteredTableQuery();
+                        
+                        return Excel::download(
+                            new ProductsExport($query),
+                            'products_export.xlsx'
+                        );
+                    }),
+                
+                Tables\Actions\Action::make('template')
+                    ->label('Download Template')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->action(function () {
+                        return Excel::download(new ProductTemplateExport, 'products_template.xlsx');
+                    }),
             ]);
     }
 
