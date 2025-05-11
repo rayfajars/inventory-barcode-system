@@ -32,6 +32,7 @@ class StatsOverview extends TableWidget
     public $endDate;
     public $selectedProduct = '';  // Empty string for "All Products"
     public $selectedUser = '';     // Add this line for user filter
+    public $selectedType = '';     // Tambah filter untuk tipe stok
 
     public function mount()
     {
@@ -46,6 +47,7 @@ class StatsOverview extends TableWidget
         $this->endDate = $filters['endDate'] ?? $this->endDate;
         $this->selectedProduct = $filters['selectedProduct'] ?? $this->selectedProduct;
         $this->selectedUser = $filters['selectedUser'] ?? $this->selectedUser;
+        $this->selectedType = $filters['selectedType'] ?? $this->selectedType;
     }
 
     public function updatedStartDate()
@@ -93,6 +95,9 @@ class StatsOverview extends TableWidget
         return $table
             ->query($this->getStockLogsQuery())
             ->columns([
+                TextColumn::make('index')
+                    ->label('No.')
+                    ->rowIndex(),
                 TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime('d/m/Y H:i')
@@ -132,7 +137,15 @@ class StatsOverview extends TableWidget
             ])
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50])
-            ->striped();
+            ->striped()
+            ->filters([
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('Tipe')
+                    ->options([
+                        'in' => 'Masuk',
+                        'out' => 'Keluar',
+                    ]),
+            ]);  // Added missing semicolon here
     }
 
     protected function getStockLogsQuery()
@@ -159,6 +172,10 @@ class StatsOverview extends TableWidget
             $query->where('user_id', $this->selectedUser);
         } elseif (!$isAdmin) {
             $query->where('user_id', $user->id);
+        }
+
+        if ($this->selectedType) {
+            $query->where('type', $this->selectedType);
         }
 
         return $query;
