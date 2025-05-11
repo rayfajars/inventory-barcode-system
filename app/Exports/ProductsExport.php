@@ -2,13 +2,13 @@
 
 namespace App\Exports;
 
-use App\Models\StockLog;
+use App\Models\Product;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Illuminate\Database\Eloquent\Builder;
 
-class StockInExport implements FromCollection, WithHeadings, WithMapping
+class ProductsExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $query;
 
@@ -22,32 +22,28 @@ class StockInExport implements FromCollection, WithHeadings, WithMapping
         if ($this->query) {
             return $this->query->get();
         }
-        return StockLog::where('type', 'in')->get();
+        return Product::select('name', 'barcode', 'price', 'stock', 'stock_limit')->get();
     }
 
     public function headings(): array
     {
         return [
-            'Nama Produk',
+            'Nama',
             'Barcode',
-            'Stock',
             'Harga',
-            'Tipe',
-            'Processed By',
-            'Tanggal',
+            'Stok',
+            'Batas Stok',
         ];
     }
 
-    public function map($row): array
+    public function map($product): array
     {
         return [
-            $row->product->name,
-            $row->product->barcode,
-            $row->quantity,
-            'Rp ' . number_format($row->product->price, 0, ',', '.'),
-            $row->type === 'in' ? 'Masuk' : 'Keluar',
-            $row->user->name,
-            $row->created_at->format('d/m/Y H:i:s'),
+            $product->name,
+            $product->barcode,
+            $product->price,
+            0, // Set stok ke 0
+            $product->stock_limit,
         ];
     }
 }

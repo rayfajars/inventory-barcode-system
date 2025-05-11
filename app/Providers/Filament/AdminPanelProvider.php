@@ -17,8 +17,13 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Filament\Resources\UserResource;
-// use App\Filament\Widgets\DashboardStats;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Forms;
+use Filament\Tables\Filters\QueryBuilder;
+use App\Filament\Pages\LowStockPage;
+use App\Filament\Pages\StockSummaryPage;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -28,22 +33,23 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName('Inventory Management')
             ->login()
             ->colors([
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->resources([
-                UserResource::class,
-            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Pages\Dashboard::class,
+                LowStockPage::class,
+                \App\Filament\Pages\StockSummaryPage::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                // DashboardStats::class,
-            ])
+            // ->widgets([
+            //     Widgets\AccountWidget::class,
+            //     Widgets\FilamentInfoWidget::class,
+            // ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -57,6 +63,15 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            ->resources([
+                \App\Filament\Resources\UserResource::class,
+                \App\Filament\Resources\ProductResource::class,
+                \App\Filament\Resources\HistoryLogResource::class,
+            ])
+            // ->filters([
+            //     ...
+            // ])
+            ;
     }
 }

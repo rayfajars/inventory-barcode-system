@@ -99,6 +99,7 @@ class StockOut extends Page implements HasForms
             'price' => $data['price'],
             'total_price' => $data['total_price'],
             'user_id' => Auth::id(),
+            'processed_by' => Auth::user()->name,
         ]);
 
         $product->decrement('stock', $data['quantity']);

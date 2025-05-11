@@ -7,31 +7,35 @@ use App\Models\StockLog;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Illuminate\Database\Eloquent\Builder;
 
 class StockOutExport implements FromCollection, WithHeadings, WithMapping
 {
-    protected $records;
+    protected $query;
 
-    public function __construct($records)
+    public function __construct(?Builder $query = null)
     {
-        $this->records = $records;
+        $this->query = $query;
     }
 
     public function collection()
     {
-        return $this->records;
+        if ($this->query) {
+            return $this->query->get();
+        }
+        return StockLog::where('type', 'out')->get();
     }
 
     public function headings(): array
     {
         return [
-            'Product Name',
+            'Nama Produk',
             'Barcode',
-            'Quantity',
-            'Price',
-            'Total Price',
+            'Stock',
+            'Harga',
+            'Tipe',
             'Processed By',
-            'Date',
+            'Tanggal',
         ];
     }
 
@@ -42,7 +46,7 @@ class StockOutExport implements FromCollection, WithHeadings, WithMapping
             $row->product->barcode,
             $row->quantity,
             'Rp ' . number_format($row->product->price, 0, ',', '.'),
-            'Rp ' . number_format($row->total_price, 0, ',', '.'),
+            $row->type === 'in' ? 'Masuk' : 'Keluar',
             $row->user->name,
             $row->created_at->format('d/m/Y H:i:s'),
         ];

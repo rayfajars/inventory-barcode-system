@@ -10,7 +10,7 @@
                             class="w-full bg-gray-800 border-gray-700 text-black dark:text-white "
                         >
                             <option value="">Semua Products</option>
-                            @foreach(\App\Models\Product::pluck('name', 'id') as $id => $name)
+                            @foreach(\App\Models\Product::withTrashed()->pluck('name', 'id') as $id => $name)
                                 <option value="{{ $id }}">{{ $name }}</option>
                             @endforeach
                         </x-filament::input.select>
@@ -26,7 +26,7 @@
                             class="w-full bg-gray-800 border-gray-700 text-black dark:text-white"
                         >
                             <option value="">Semua Users</option>
-                            @foreach(\App\Models\User::pluck('name', 'id') as $id => $name)
+                            @foreach(\App\Models\User::withTrashed()->pluck('name', 'id') as $id => $name)
                                 <option value="{{ $id }}">{{ $name }}</option>
                             @endforeach
                         </x-filament::input.select>

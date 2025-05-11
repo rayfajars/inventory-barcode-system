@@ -17,19 +17,18 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use App\Services\HistoryLogService;
 
-class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
+class ImportProductOut extends Page implements HasForms, Tables\Contracts\HasTable
 {
     use InteractsWithForms;
     use Tables\Concerns\InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-arrow-down-tray';
-    protected static ?string $navigationLabel = 'Import Produk Masuk';
-    protected static ?int $navigationSort = 1;
-    protected static string $view = 'filament.pages.import-product';
+    protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
+    protected static ?string $navigationLabel = 'Import Produk Keluar';
+    protected static ?int $navigationSort = 2;
+    protected static string $view = 'filament.pages.import-product-out';
 
     public ?array $data = [];
     public Collection $importResults;
-
 
     public function mount(): void
     {
@@ -82,7 +81,6 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                 $name = $row[1] ?? null;
                 $price = $row[2] ?? null;
                 $stock = $row[3] ?? null;
-                $stockLimit = $row[4] ?? 10; // Default to 10 if not provided
 
                 if (!$barcode || !$name || !$price || !$stock) {
                     $results->push([
@@ -90,120 +88,75 @@ class ImportProduct extends Page implements HasForms, Tables\Contracts\HasTable
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
-                        'stock_limit' => $stockLimit,
                         'status' => 'Gagal',
                         'message' => 'Data tidak lengkap'
                     ]);
                     continue;
                 }
 
-                // Check if barcode exists (including soft deleted)
-                $existingProduct = Product::withTrashed()->where('barcode', $barcode)->first();
-                if ($existingProduct) {
-                    try {
-                        if ($existingProduct->trashed()) {
-                            // If product was soft deleted, restore it and update stock
-                            $existingProduct->restore();
-                            $existingProduct->update([
-                                'stock' => $stock, // Set to new stock value
-                                'name' => $name,
-                                'price' => $price,
-                                'stock_limit' => $stockLimit
-                            ]);
-                        } else {
-                            // If product exists and not deleted, update name, price and increment stock
-                            $existingProduct->update([
-                                'name' => $name,
-                                'price' => $price,
-                                'stock_limit' => $stockLimit
-                            ]);
-                            $existingProduct->increment('stock', $stock);
-                        }
-
-                        // Create individual stock logs for each unit
-                        for ($i = 0; $i < $stock; $i++) {
-                            \App\Models\StockLog::create([
-                                'product_id' => $existingProduct->id,
-                                'type' => 'in',
-                                'quantity' => 1,
-                                'price' => $price,
-                                'total_price' => $price,
-                                'user_id' => Auth::id(),
-                                'processed_by' => Auth::user()->name,
-                            ]);
-                        }
-
-                        $message = $existingProduct->trashed()
-                            ? "Produk berhasil di-restore dan stok diupdate"
-                            : "Produk berhasil diupdate dan stok ditambahkan";
-
-                        \App\Services\HistoryLogService::logImport('product', "Update produk: {$name} (jumlah: {$stock} unit)");
-
-                        $results->push([
-                            'barcode' => $barcode,
-                            'name' => $name,
-                            'price' => $price,
-                            'stock' => $stock,
-                            'stock_limit' => $stockLimit,
-                            'status' => 'Berhasil',
-                            'message' => $message
-                        ]);
-                        continue;
-                    } catch (\Exception $e) {
-                        $results->push([
-                            'barcode' => $barcode,
-                            'name' => $name,
-                            'price' => $price,
-                            'stock' => $stock,
-                            'stock_limit' => $stockLimit,
-                            'status' => 'Gagal',
-                            'message' => $e->getMessage()
-                        ]);
-                        continue;
-                    }
-                }
-
-                try {
-                    $product = Product::create([
+                // Cari produk berdasarkan barcode
+                $product = Product::where('barcode', $barcode)->first();
+                if (!$product) {
+                    $results->push([
                         'barcode' => $barcode,
                         'name' => $name,
                         'price' => $price,
                         'stock' => $stock,
+                        'status' => 'Gagal',
+                        'message' => 'Produk tidak ditemukan'
                     ]);
+                    continue;
+                }
 
-                    // Create individual stock logs for each unit
+                // Cek stok cukup
+                if ($product->stock < $stock) {
+                    $results->push([
+                        'barcode' => $barcode,
+                        'name' => $product->name,
+                        'price' => $product->price,
+                        'stock' => $stock,
+                        'status' => 'Gagal',
+                        'message' => 'Stok tidak mencukupi'
+                    ]);
+                    continue;
+                }
+
+                try {
+                    // Kurangi stok
+                    $product->stock -= $stock;
+                    $product->save();
+
+                    // Buat log stok keluar per unit
                     if ($stock > 0) {
                         for ($i = 0; $i < $stock; $i++) {
                             \App\Models\StockLog::create([
                                 'product_id' => $product->id,
-                                'type' => 'in',
+                                'type' => 'out',
                                 'quantity' => 1,
-                                'price' => $price,
-                                'total_price' => $price,
+                                'price' => $product->price,
+                                'total_price' => $product->price,
                                 'user_id' => Auth::id(),
                                 'processed_by' => Auth::user()->name,
                             ]);
                         }
                     }
 
-                    \App\Services\HistoryLogService::logImport('product', "Import produk masuk: {$name} (jumlah: {$stock} unit)");
+                    HistoryLogService::logImport('product', "Import produk keluar: {$product->name} (jumlah: {$stock} unit)");
 
                     $results->push([
                         'barcode' => $barcode,
-                        'name' => $name,
-                        'price' => $price,
+                        'name' => $product->name,
+                        'price' => $product->price,
                         'stock' => $stock,
-                        'stock_limit' => $stockLimit,
                         'status' => 'Berhasil',
-                        'message' => 'Produk berhasil diimport'
+                        'message' => 'Stok berhasil dikurangi'
                     ]);
                 } catch (\Exception $e) {
                     $results->push([
                         'barcode' => $barcode,
-                        'name' => $name,
-                        'price' => $price,
+                        'name' => $product->name,
+                        'price' => $product->price,
                         'stock' => $stock,
-                        'stock_limit' => $stockLimit,
                         'status' => 'Gagal',
                         'message' => $e->getMessage()
                     ]);

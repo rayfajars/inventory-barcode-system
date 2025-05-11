@@ -23,7 +23,7 @@ class StockLogResource extends Resource
 {
     protected static ?string $model = StockLog::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
     protected static ?string $modelLabel = 'Log Stok';
     protected static ?string $pluralModelLabel = 'Log Stok';
 
@@ -92,9 +92,10 @@ class StockLogResource extends Resource
             })
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
-              ->dateTime('d/m/Y H:i')
-                ->sortable()
-                ->label('Tanggal'),
+                    ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta')
+                    ->sortable()
+                    ->label('Tanggal'),
                 Tables\Columns\TextColumn::make('product.name')
                     ->searchable()
                     ->sortable()
@@ -178,18 +179,13 @@ class StockLogResource extends Resource
                     ->label('Ekspor Stok Keluar')
                     ->icon('heroicon-o-document-arrow-down')
                     ->action(function (Tables\Actions\Action $action) {
-                        $table = $action->getTable();
-
-                        // Get the base query with all filters applied
-                        $query = $table->getQuery();
+                        $query = $action->getLivewire()->getFilteredTableQuery();
 
                         // Force the type to be 'out' for stock out export
                         $query->where('type', 'out');
 
-                        $records = $query->get();
-
                         return Excel::download(
-                            new StockOutExport($records),
+                            new StockOutExport($query),
                             'stock-out-report.xlsx'
                         );
                     }),
@@ -197,18 +193,13 @@ class StockLogResource extends Resource
                     ->label('Ekspor Stok Masuk')
                     ->icon('heroicon-o-document-arrow-down')
                     ->action(function (Tables\Actions\Action $action) {
-                        $table = $action->getTable();
-
-                        // Get the base query with all filters applied
-                        $query = $table->getQuery();
+                        $query = $action->getLivewire()->getFilteredTableQuery();
 
                         // Force the type to be 'in' for stock in export
                         $query->where('type', 'in');
 
-                        $records = $query->get();
-
                         return Excel::download(
-                            new StockInExport($records),
+                            new StockInExport($query),
                             'stock-in-report.xlsx'
                         );
                     }),
