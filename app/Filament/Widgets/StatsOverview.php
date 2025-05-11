@@ -23,6 +23,7 @@ use Livewire\Attributes\On;
 class StatsOverview extends TableWidget
 {
     protected static string $view = 'filament.widgets.stats-overview-widget-with-filters';
+    protected static ?string $heading = 'Log Stok';
 
     protected int | string | array $columnSpan = 'full';
 

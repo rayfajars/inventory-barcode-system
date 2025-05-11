@@ -31,6 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName('Inventory Management')
             ->login()
             ->colors([
                 'primary' => Color::Amber,
