@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ExportBulkAction;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Auth;
 
 class StockSummaryPage extends Page implements \Filament\Tables\Contracts\HasTable
 {
@@ -20,6 +21,13 @@ class StockSummaryPage extends Page implements \Filament\Tables\Contracts\HasTab
     protected static ?string $navigationLabel = 'Rekap Stok';
     protected static ?string $title = 'Rekap Stok';
     protected static string $view = 'filament.pages.stock-summary-page';
+
+    // Tambahkan method ini untuk mengontrol visibility berdasarkan role
+    public static function canAccess(): bool
+    {
+        $user = Auth::user();
+        return $user && $user->role === 'admin';
+    }
 
     public function table(Table $table): Table
     {
