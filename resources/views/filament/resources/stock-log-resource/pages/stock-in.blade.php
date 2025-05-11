@@ -4,7 +4,7 @@
 
         <div class="mt-4">
             <x-filament::button type="submit">
-                Process Stock In
+                Process Stock Masuk
             </x-filament::button>
         </div>
     </x-filament-panels::form>

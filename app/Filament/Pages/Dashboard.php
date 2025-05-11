@@ -3,7 +3,6 @@
 namespace App\Filament\Pages;
 
 use Filament\Pages\Dashboard as BasePage;
-use App\Filament\Widgets\LowStockAlert;
 
 class Dashboard extends BasePage
 {
@@ -12,7 +11,7 @@ class Dashboard extends BasePage
     protected function getHeaderWidgets(): array
     {
         return [
-            LowStockAlert::class,
+            // LowStockAlert::class, // Dihapus dari dashboard
         ];
     }
 }
