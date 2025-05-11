@@ -23,6 +23,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Forms;
 use Filament\Tables\Filters\QueryBuilder;
 use App\Filament\Pages\LowStockPage;
+use App\Filament\Pages\StockSummaryPage;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -42,6 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Pages\Dashboard::class,
                 LowStockPage::class,
+                \App\Filament\Pages\StockSummaryPage::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             // ->widgets([
