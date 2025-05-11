@@ -108,7 +108,20 @@ class ProductResource extends Resource
                     ->label('Diperbarui pada'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('stock_status')
+                    ->label('Status Stok')
+                    ->options([
+                        'low' => 'Stok Menipis',
+                        'normal' => 'Stok Normal',
+                    ])
+                    ->query(function ($query, $data) {
+                        if ($data['value'] === 'low') {
+                            return $query->whereRaw('stock <= stock_limit');
+                        }
+                        if ($data['value'] === 'normal') {
+                            return $query->whereRaw('stock > stock_limit');
+                        }
+                    })
             ])
             ->actions([
                 Tables\Actions\Action::make('stockIn')
